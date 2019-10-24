@@ -1,5 +1,5 @@
 ---
-# tasks file for consul
+# tasks file for Consul
 - name: Update Repositories
   become: yes
   apt:
