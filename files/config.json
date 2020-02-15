@@ -1,0 +1,48 @@
+{
+  "advertise_addr": "YYYYY",
+  "bind_addr": "YYYYY",
+  "node_name":"XXXXX",
+  "bootstrap_expect": 3,
+  "client_addr": "0.0.0.0",
+  "datacenter": "PROD",
+  "data_dir": "/var/lib/consul",
+  "domain": "cyan.corp.deloittefusion.net",
+  "enable_script_checks": true,
+  "dns_config": {
+    "enable_truncate": true,
+    "only_passing": true
+  },
+  "enable_syslog": true,
+  "encrypt": "OtbvJ9voUBqwmLv/vUjt0ongtWoQpuzXpZOwahQX90g=",
+  "encrypt_verify_incoming": true,
+  "encrypt_verify_outgoing": true,
+  "leave_on_terminate": true,
+  "log_level": "DEBUG",
+  "rejoin_after_leave": true,
+  "retry_join": [
+    "consul-00",
+    "consul-01",
+    "consul-02"
+  ],
+  "server": true,
+  "start_join": [
+    "consul-00",
+    "consul-01",
+    "consul-02"
+  ],
+  "ui": true,
+  "verify_incoming": true,
+  "verify_incoming_rpc": true,
+  "verify_outgoing": true,
+  "verify_server_hostname": true,
+  "auto_encrypt": {
+    "allow_tls": true
+  },
+  "ca_file":"/etc/consul.d/tls/ca/cyan.corp.deloittefusion.net-agent-ca.pem",
+  "cert_file":"/etc/consul.d/tls/server/prod-server-cyan.corp.deloittefusion.net-X.pem",
+  "key_file":"/etc/consul.d/tls/server/prod-server-cyan.corp.deloittefusion.net-X-key.pem",
+  "ports": {
+    "http": -1,
+    "https": 8501
+  }
+}

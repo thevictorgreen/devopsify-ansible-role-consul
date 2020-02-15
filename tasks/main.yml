@@ -1,6 +1,173 @@
 ---
-# tasks file for Consul
+# tasks file for roles/consulserver
 - name: Update Repositories
   become: yes
   apt:
     update_cache: yes
+
+- name: Install Prerequisites
+  become: yes
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - unzip
+
+- name: Upload Hashicorp Consul 1.6.1 binary
+  become: yes
+  copy:
+    src: consul_1.6.1_linux_amd64.zip
+    dest: /tmp/consul_1.6.1_linux_amd64.zip
+    force: no
+
+- name: Unarchive Hashicorp Consul 1.6.1 binary
+  become: yes
+  unarchive:
+    src: /tmp/consul_1.6.1_linux_amd64.zip
+    dest: /usr/local/bin
+    remote_src: yes
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Create Hashicorp Consul related directories
+  become: yes
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - '/var/lib/consul'
+    - '/etc/consul.d'
+    - '/etc/consul.d/tls'
+    - '/etc/consul.d/tls/ca'
+    - '/etc/consul.d/tls/cli'
+    - '/etc/consul.d/tls/server'
+
+- name: Upload Hashicorp Consul config.json file
+  become: yes
+  copy:
+    src: config.json
+    dest: /etc/consul.d/config.json
+    force: no
+
+- name: Set ip address in config.json file
+  become: yes
+  shell: sed -i s/YYYYY/$(hostname -i | cut -d' ' -f1)/g /etc/consul.d/config.json
+
+- name: Upload Hashicorp Consul service definition file
+  become: yes
+  copy:
+    src: consul.service
+    dest: /etc/systemd/system/consul.service
+    force: no
+
+- name: Set node name in consul.service file
+  become: yes
+  shell:
+    cmd: |
+      if [ $( hostname | grep '000' ) ]
+      then
+           sed -i 's/XXXXX/consul-00/g' /etc/systemd/system/consul.service
+      elif [ $( hostname | grep '001' ) ]
+      then
+           sed -i 's/XXXXX/consul-01/g' /etc/systemd/system/consul.service
+      elif [ $( hostname | grep '002' ) ]
+      then
+           sed -i 's/XXXXX/consul-02/g' /etc/systemd/system/consul.service
+      fi
+
+- name: Upload environment file to /etc/environment
+  become: yes
+  copy:
+    src: environment
+    dest: /etc/environment
+    force: no
+
+- name: Set ip address in environment file
+  become: yes
+  shell: sed -i s/YYYYY/$(hostname -i | cut -d' ' -f1)/g /etc/environment
+
+- name: Set node name and node number in config.json and environment files
+  become: yes
+  shell:
+    cmd: |
+      if [ $( hostname | grep '000' ) ]
+      then
+           sed -i 's/XXXXX/consul-00/g' /etc/consul.d/config.json
+           sed -i 's/prod-server-cyan.corp.deloittefusion.net-X.pem/prod-server-cyan.corp.deloittefusion.net-0.pem/g' /etc/consul.d/config.json
+           sed -i 's/prod-server-cyan.corp.deloittefusion.net-X-key.pem/prod-server-cyan.corp.deloittefusion.net-0-key.pem/g' /etc/consul.d/config.json
+           sed -i 's/prod-cli-cyan.corp.deloittefusion.net-X.pem/prod-cli-cyan.corp.deloittefusion.net-0.pem/g' /etc/environment
+           sed -i 's/prod-cli-cyan.corp.deloittefusion.net-X-key.pem/prod-cli-cyan.corp.deloittefusion.net-0-key.pem/g' /etc/environment
+      elif [ $( hostname | grep '001' ) ]
+      then
+           sed -i 's/XXXXX/consul-01/g' /etc/consul.d/config.json
+           sed -i 's/prod-server-cyan.corp.deloittefusion.net-X.pem/prod-server-cyan.corp.deloittefusion.net-1.pem/g' /etc/consul.d/config.json
+           sed -i 's/prod-server-cyan.corp.deloittefusion.net-X-key.pem/prod-server-cyan.corp.deloittefusion.net-1-key.pem/g' /etc/consul.d/config.json
+           sed -i 's/prod-cli-cyan.corp.deloittefusion.net-X.pem/prod-cli-cyan.corp.deloittefusion.net-1.pem/g' /etc/environment
+           sed -i 's/prod-cli-cyan.corp.deloittefusion.net-X-key.pem/prod-cli-cyan.corp.deloittefusion.net-1-key.pem/g' /etc/environment
+      elif [ $( hostname | grep '002' ) ]
+      then
+           sed -i 's/XXXXX/consul-02/g' /etc/consul.d/config.json
+           sed -i 's/prod-server-cyan.corp.deloittefusion.net-X.pem/prod-server-cyan.corp.deloittefusion.net-2.pem/g' /etc/consul.d/config.json
+           sed -i 's/prod-server-cyan.corp.deloittefusion.net-X-key.pem/prod-server-cyan.corp.deloittefusion.net-2-key.pem/g' /etc/consul.d/config.json
+           sed -i 's/prod-cli-cyan.corp.deloittefusion.net-X.pem/prod-cli-cyan.corp.deloittefusion.net-2.pem/g' /etc/environment
+           sed -i 's/prod-cli-cyan.corp.deloittefusion.net-X-key.pem/prod-cli-cyan.corp.deloittefusion.net-2-key.pem/g' /etc/environment
+      fi
+
+- name: Sourcing new environment file
+  become: yes
+  shell: source /etc/environment
+  register: new_source
+  failed_when: new_source.changed != true
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Create consul group
+  become: yes
+  group:
+    name: consul
+    state: present
+
+- name: Create consul user
+  become: yes
+  user:
+    name: consul
+    shell: /sbin/nologin
+    groups: consul
+
+- name: Recursively change ownership on consul related directories
+  become: yes
+  file:
+    path: "{{ dirs }}"
+    state: directory
+    recurse: yes
+    owner: consul
+    group: consul
+  vars:
+    dirs:
+      - '/var/lib/consul'
+      - '/etc/consul.d/tls'
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: TODO Items
+  debug:
+    msg:
+      - "Generate key for gossip encryption: consul keygen"
+      - "Put All Nodes in /etc/hosts eg: 10.224.0.117 pucyan0acon000.cyan.corp.deloittefusion.net pucyan0acon000 consul-00"
+      - "Generate TLS certs For Consul cluster. This action should be performed on a node outside of the consul cluster"
+      - "./tls-consul-cluster.sh"
+      - "Upload certs to the appropriate directories"
+      - "Give consul user permissions to uploaded certs"
+      - "chown -R consul:consul /etc/consul.d/tls"
+      - "chown -R consul:consul /var/lib/consul"
+      - "Verify content in the following files"
+      - "cat /etc/environment"
+      - "cat /etc/systemd/system/consul.service"
+      - "cat /etc/consul.d/config.json"
+      - "env"
+      - "systemctl enable consul.service"
+      - "systemctl status -l consul.service"
+      - "Start consul service on each host within seconds of each other"
+      - "systemctl start consul.serivce"
+      - "systemctl status -l consul.service"
+      -  "consul members list"
+      - "consul operator raft list-peers"
+      - "Create TLS certs for consul clients"
+      - "./tls-consul-clients.sh"
