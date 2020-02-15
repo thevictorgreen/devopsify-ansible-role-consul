@@ -1,0 +1,29 @@
+consul keygen
+
+[HOST FILE SETUP EXAMPLE]
+# CONSUL CLUSTER NODES
+10.224.0.118 pucyan0acon000.cyan.corp.deloittefusion.net pucyan0acon000 consul-00
+10.224.0.189 pucyan0acon001.cyan.corp.deloittefusion.net pucyan0acon001 consul-01
+10.224.0.106 pucyan0acon002.cyan.corp.deloittefusion.net pucyan0acon002 consul-02
+
+[Consul TLS SETUP]
+export CONSUL_HTTP_ADDR=https://10.224.0.118:8501
+export CONSUL_CACERT=/etc/consul.d/tls/ca/cyan.corp.deloittefusion.net-agent-ca.pem
+export CONSUL_CLIENT_CERT=/etc/consul.d/tls/cli/prod-cli-cyan.corp.deloittefusion.net-0.pem
+export CONSUL_CLIENT_KEY=/etc/consul.d/tls/cli/prod-cli-cyan.corp.deloittefusion.net-0-key.pem
+
+consul tls ca create -days=<int> -domain=<string>
+consul tls cert create -server -days=<int> -dc=<string> -domain=<string> -additional-dnsname=<string> -additional-ipaddress=<string>
+consul tls cert create -cli -days=<int> -dc=<string> -domain=<string>
+consul tls cert create -client -days=<int> -dc=<string> -domain=<string> -additional-dnsname=<string> -additional-ipaddress=<string>
+
+consul tls ca create -days=1095 -domain=cyan.corp.deloittefusion.net
+consul tls cert create -server -days=1095 -dc=prod -domain=cyan.corp.deloittefusion.net -additional-dnsname=consul-00 -additional-dnsname=pucyan0acon000 -additional-ipaddress=10.224.0.117
+consul tls cert create -server -days=1095 -dc=prod -domain=cyan.corp.deloittefusion.net -additional-dnsname=consul-01 -additional-dnsname=pucyan0acon001 -additional-ipaddress=10.224.0.112
+consul tls cert create -server -days=1095 -dc=prod -domain=cyan.corp.deloittefusion.net -additional-dnsname=consul-02 -additional-dnsname=pucyan0acon002 -additional-ipaddress=10.224.0.129
+consul tls cert create -cli -days=1095 -dc=prod -domain=cyan.corp.deloittefusion.net
+consul tls cert create -cli -days=1095 -dc=prod -domain=cyan.corp.deloittefusion.net
+consul tls cert create -cli -days=1095 -dc=prod -domain=cyan.corp.deloittefusion.net
+
+consul members list
+consul operator raft list-peers
