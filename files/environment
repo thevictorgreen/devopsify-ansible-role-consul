@@ -1,0 +1,5 @@
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+export CONSUL_HTTP_ADDR=https://YYYYY:8501
+export CONSUL_CACERT=/etc/consul.d/tls/ca/cyan.corp.deloittefusion.net-agent-ca.pem
+export CONSUL_CLIENT_CERT=/etc/consul.d/tls/cli/prod-cli-cyan.corp.deloittefusion.net-X.pem
+export CONSUL_CLIENT_KEY=/etc/consul.d/tls/cli/prod-cli-cyan.corp.deloittefusion.net-X-key.pem
